@@ -26,12 +26,16 @@ import {
 const session = require("express-session");
 
 
-// const client_id: string = "BBE5EAA22B484CCD8C8D8E7F466CFE45";
-const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // arhum id
-const client_secret: string =
-  "3693kQyUnjR_WpM-rZkKfmvhZTBLWYdme2Z5DcTIQy3Le9xV"; // arhum secret
-// const client_secret: string =
-//   "0vYHCjeEpwxyTmscOqjx1PXbeCA7yHnYznY-2wwwRq_C4jk4";
+  // make xero Object
+  let xeroOne = new XeroClient();
+
+// const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // arhum id
+// const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3"; // arhum secret
+
+const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
+const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
+
+
 const redirectUrl: string = "http://localhost:5001/callback";
 const scopes: string =
   "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
@@ -100,13 +104,42 @@ const sendEmail = (receiver, subject, text) => {
   });
 }
 
+
+const intiateXeroObject = (id, secret, url) => {
+  const client_id: string = id; // user id
+  const client_secret: string = secret;  // user secret
+  const redirectUrl: string = "http://localhost:5001/callback";
+  const scopes: string =
+    "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
+
+  const xeroNew = new XeroClient({
+    clientId: client_id,
+    clientSecret: client_secret,
+    redirectUris: [redirectUrl],
+    scopes: scopes.split(" "),
+  });
+
+  if (!client_id || !client_secret || !redirectUrl) {
+    throw Error(
+      "Environment Variables not all set - please check your .env file in the project root or create one!"
+    );
+  }
+  return xeroNew
+}
+
 app.get("/", (req: Request, res: Response) => {
   res.send(`<a href='/connect'>Connect to Xero</a>`);
 });
 
 app.get("/connect", async (req: Request, res: Response) => {
+  // get credentials
+  let clientId = req.cookies.clientId
+  let clientSecret = req.cookies.clientSecret
+  let redirectUrl = req.cookies.redirectUrl
+  xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
+
   try {
-    const consentUrl: string = await xero.buildConsentUrl();
+    const consentUrl: string = await xeroOne.buildConsentUrl();
     res.redirect(consentUrl);
   } catch (err) {
     res.send("Sorry, something went wrong");
@@ -115,22 +148,25 @@ app.get("/connect", async (req: Request, res: Response) => {
 
 app.get("/callback", async (req: Request, res: Response) => {
   try {
-    const tokenSet: TokenSet = await xero.apiCallback(req.url);
-    await xero.updateTenants();
+    const tokenSet: TokenSet = await xeroOne.apiCallback(req.url);
+    await xeroOne.updateTenants();
 
     const decodedIdToken: XeroIdToken = jwtDecode(tokenSet.id_token);
     const decodedAccessToken: XeroAccessToken = jwtDecode(
       tokenSet.access_token
     );
+
+    console.log("Cookies::::")
+    console.log(req.cookies)
     
     let status = req.cookies.xeroStatus
 
     req.session.decodedIdToken = decodedIdToken;
     req.session.decodedAccessToken = decodedAccessToken;
     req.session.tokenSet = tokenSet;
-    req.session.allTenants = xero.tenants;
+    req.session.allTenants = xeroOne.tenants;
     // XeroClient is sorting tenants behind the scenes so that most recent / active connection is at index 0
-    req.session.activeTenant = xero.tenants[0];
+    req.session.activeTenant = xeroOne.tenants[0];
 
     const authData: any = authenticationData(req, res);
 
@@ -156,12 +192,12 @@ app.get("/callback", async (req: Request, res: Response) => {
 
 app.get("/organisation", async (req: Request, res: Response) => {
   try {
-    const tokenSet: TokenSet = await xero.readTokenSet();
+    const tokenSet: TokenSet = await xeroOne.readTokenSet();
     console.log(tokenSet.expired() ? "expired" : "valid");
-    const response: any = await xero.accountingApi.getOrganisations(
+    const response: any = await xeroOne.accountingApi.getOrganisations(
       req.session.activeTenant.tenantId
     );
-    res.send(`Hello, ${response.body.organisations[0].name}`);
+    res.send(`Hello, ${response.body.organisations[0].name}, ${req.session.activeTenant.tenantId}`);
   } catch (err) {
     res.send("Sorry, something went wrong");
   }
@@ -169,7 +205,7 @@ app.get("/organisation", async (req: Request, res: Response) => {
 
 app.get("/contacts", async (req: Request, res: Response) => {
   try {
-    const contacts = await xero.accountingApi.getContacts(
+    const contacts = await xeroOne.accountingApi.getContacts(
       req.session.activeTenant.tenantId
     );
     console.log("contacts: ", contacts.body.contacts);
@@ -278,7 +314,7 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
   console.log(contacts_where)
   let ifModifiedSince = null;
   try {
-    const contacts = await xero.accountingApi.getContacts(
+    const contacts = await xeroOne.accountingApi.getContacts(
       req.session.activeTenant.tenantId,
       ifModifiedSince,
       contacts_where
@@ -290,7 +326,7 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
     const contact: Contact = contacts.body.contacts[0]; //  const Currency :CurrencyCode = CurrencyCode.USD
     const lineItem: LineItem[] = [];
     lineItem.push({
-      accountID: "562555f2-8cde-4ce9-8203-0363922537a4",
+      accountID: "ksdjkfj0-dkjkdjf-dfjkdfjfj",
     });
     //   lineItem.accountID =
     const invoice: Invoice[] = [
@@ -318,7 +354,7 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
     const invoices: Invoices = {
       invoices: invoice,
     };
-    const response = await xero.accountingApi.createInvoices(
+    const response = await xeroOne.accountingApi.createInvoices(
       req.session.activeTenant.tenantId,
       invoices
     );
@@ -340,7 +376,7 @@ app.get("/invoices", async (req: Request, res: Response) => {
   let where = 'contact.contactID=="78b7299c-4f1f-46d2-acc3-44a46bd361b1"';
   let ifModifiedSince = null;
   try {
-    const contacts = await xero.accountingApi.getInvoices(
+    const contacts = await xeroOne.accountingApi.getInvoices(
       req.session.activeTenant.tenantId,
       ifModifiedSince,
       );
@@ -415,11 +451,12 @@ app.get("/contact", async (req: Request, res: Response) => {
     const contacts: Contacts = {
       contacts: [contact],
     };
-    const response = await xero.accountingApi.createContacts(
+    console.log("Tenat ID:", req.session.activeTenant.tenantId)
+    const response = await xeroOne.accountingApi.createContacts(
       req.session.activeTenant.tenantId,
       contacts
-    );
-    console.log("contacts: ", response.body.contacts);
+      );
+      console.log("contacts: ", response.body.contacts);
     res.redirect('http://localhost:3000/find-customers');
   } catch (err) {
     res.json(err);
