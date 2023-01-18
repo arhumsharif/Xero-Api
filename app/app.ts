@@ -36,7 +36,7 @@ const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
 const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
 
 
-const redirectUrl: string = "http://localhost:5000/callback";
+const redirectUrl: string = "https://ironmotorsportsxero-hmwty.ondigitalocean.app/callback";
 const scopes: string =
   "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
@@ -108,7 +108,7 @@ const sendEmail = (receiver, subject, text) => {
 const intiateXeroObject = (id, secret, url) => {
   const client_id: string = id; // user id
   const client_secret: string = secret;  // user secret
-  const redirectUrl: string = "http://localhost:5000/callback";
+  const redirectUrl: string = "https://ironmotorsportsxero-hmwty.ondigitalocean.app/callback";
   const scopes: string =
     "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
