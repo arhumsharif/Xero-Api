@@ -304,7 +304,10 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
   let type = req.cookies.customerPayType
   let dueDate = req.cookies.customerDate
   let date: Date = new Date()
-  let todayDate = date.toLocaleDateString()
+  var year = date.toLocaleString("default", { year: "numeric" });
+  var month = date.toLocaleString("default", { month: "2-digit" });
+  var day = date.toLocaleString("default", { day: "2-digit" });
+  let todayDate = year + '-' + month + '-' + day
   let price_in_number = Number(price)
   let tax  = 0 // 8.25
 
@@ -358,14 +361,16 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
       req.session.activeTenant.tenantId,
       invoices
     );
-    console.log("tan tan tan", {date, dueDate})
     // res.send(invoices.body.invoices);
     // Send Email
     let text = '\t\tYour Invoice has been generated\n\n---------------------------------------\nInvoice Account type: ' + type + ' \nCurrent Date: ' + todayDate + ' \nDue Date: ' + dueDate + ' \nPrice: ' + price + '\n\nThank You! \nRegards, \nIron Motorsports\n---------------------------------------'
     sendEmail(email, 'Invoice Generation From Iron Motorsports', text)
     res.redirect('http://localhost:3000/find-jobs');
   } catch (err) {
-    console.log("error", err);
+    console.log(err.response.body.Elements[0].ValidationErrors[0].Message)
+    // store the message in cookie
+    res.cookie('xeroError', err.response.body.Elements[0].ValidationErrors[0].Message)
+    res.redirect('http://localhost:3000/find-jobs');
   }
 });
 
@@ -459,7 +464,10 @@ app.get("/contact", async (req: Request, res: Response) => {
       console.log("contacts: ", response.body.contacts);
     res.redirect('http://localhost:3000/find-customers');
   } catch (err) {
-    res.json(err);
+    console.log(err.response.body.Elements[0].ValidationErrors[0].Message)
+    // store the message in cookie
+    res.cookie('xeroError', err.response.body.Elements[0].ValidationErrors[0].Message)
+    res.redirect('http://localhost:3000/find-customers');
   }
 });
 
