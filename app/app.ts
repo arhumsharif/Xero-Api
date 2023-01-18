@@ -36,7 +36,7 @@ const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
 const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
 
 
-const redirectUrl: string = "http://localhost:5001/callback";
+const redirectUrl: string = "http://localhost:5000/callback";
 const scopes: string =
   "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
@@ -108,7 +108,7 @@ const sendEmail = (receiver, subject, text) => {
 const intiateXeroObject = (id, secret, url) => {
   const client_id: string = id; // user id
   const client_secret: string = secret;  // user secret
-  const redirectUrl: string = "http://localhost:5001/callback";
+  const redirectUrl: string = "http://localhost:5000/callback";
   const scopes: string =
     "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
@@ -365,12 +365,12 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
     // Send Email
     let text = '\t\tYour Invoice has been generated\n\n---------------------------------------\nInvoice Account type: ' + type + ' \nCurrent Date: ' + todayDate + ' \nDue Date: ' + dueDate + ' \nPrice: ' + price + '\n\nThank You! \nRegards, \nIron Motorsports\n---------------------------------------'
     sendEmail(email, 'Invoice Generation From Iron Motorsports', text)
-    res.redirect('http://localhost:3000/find-jobs');
+    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-jobs');
   } catch (err) {
     console.log(err.response.body.Elements[0].ValidationErrors[0].Message)
     // store the message in cookie
     res.cookie('xeroError', err.response.body.Elements[0].ValidationErrors[0].Message)
-    res.redirect('http://localhost:3000/find-jobs');
+    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-jobs');
   }
 });
 
@@ -462,16 +462,16 @@ app.get("/contact", async (req: Request, res: Response) => {
       contacts
       );
       console.log("contacts: ", response.body.contacts);
-    res.redirect('http://localhost:3000/find-customers');
+    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-customers');
   } catch (err) {
     console.log(err.response.body.Elements[0].ValidationErrors[0].Message)
     // store the message in cookie
     res.cookie('xeroError', err.response.body.Elements[0].ValidationErrors[0].Message)
-    res.redirect('http://localhost:3000/find-customers');
+    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-customers');
   }
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
