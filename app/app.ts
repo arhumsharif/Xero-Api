@@ -1,5 +1,6 @@
 require("dotenv").config();
 var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
 import { rejects } from "assert";
 import { promises } from "dns";
@@ -25,6 +26,14 @@ import {
 
 const session = require("express-session");
 
+// urls
+const xeroApiLocal = "http://localhost:5001/"
+const xeroApiServer = "https://ironmotorsportsxero-hmwty.ondigitalocean.app/"
+
+// iron motorsports
+const ironLocal = "http://localhost:3000/"
+const ironServer = "https://ironmotorsportsapi-gbuda.ondigitalocean.app/"
+
 
   // make xero Object
   let xeroOne = new XeroClient();
@@ -36,7 +45,7 @@ const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
 const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
 
 
-const redirectUrl: string = "https://ironmotorsportsxero-hmwty.ondigitalocean.app/callback";
+const redirectUrl: string = xeroApiServer + "callback";
 const scopes: string =
   "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
@@ -67,6 +76,12 @@ app.use(
 );
 
 app.use(cookieParser());
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: true }))
+
+// parse application/json
+app.use(bodyParser.json())
 
 const authenticationData: any = (req: Request, res: Response) => {
   return {
@@ -108,7 +123,7 @@ const sendEmail = (receiver, subject, text) => {
 const intiateXeroObject = (id, secret, url) => {
   const client_id: string = id; // user id
   const client_secret: string = secret;  // user secret
-  const redirectUrl: string = "https://ironmotorsportsxero-hmwty.ondigitalocean.app/callback";
+  const redirectUrl: string = xeroApiServer + "callback";
   const scopes: string =
     "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
@@ -129,6 +144,24 @@ const intiateXeroObject = (id, secret, url) => {
 
 app.get("/", (req: Request, res: Response) => {
   res.send(`<a href='/connect'>Connect to Xero</a>`);
+});
+
+app.post("/connection", async (req: Request, res: Response) => {
+  // get credentials
+  console.log(req.body)
+  console.log(typeof(req.body))
+  console.log(req.body.Phone)
+  // let clientId = req.body.ClientId
+  // let clientSecret = req.body.ClientSecret
+  // let name = req.body.Name
+  // let email = req.body.Email
+  // let phone =req.body.Phone
+  // console.log({clientId, clientSecret, name, email, phone})
+  // xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
+
+  return res.status(200).json({
+    message: "Data Intialized"
+  });
 });
 
 app.get("/connect", async (req: Request, res: Response) => {
@@ -365,12 +398,12 @@ app.get("/save-invoice", async (req: Request, res: Response) => {
     // Send Email
     let text = '\t\tYour Invoice has been generated\n\n---------------------------------------\nInvoice Account type: ' + type + ' \nCurrent Date: ' + todayDate + ' \nDue Date: ' + dueDate + ' \nPrice: ' + price + '\n\nThank You! \nRegards, \nIron Motorsports\n---------------------------------------'
     sendEmail(email, 'Invoice Generation From Iron Motorsports', text)
-    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-jobs');
+    res.redirect(ironServer + 'find-jobs');
   } catch (err) {
     console.log(err.response.body.Elements[0].ValidationErrors[0].Message)
     // store the message in cookie
     res.cookie('xeroError', err.response.body.Elements[0].ValidationErrors[0].Message)
-    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-jobs');
+    res.redirect(ironServer + 'find-jobs');
   }
 });
 
@@ -462,16 +495,16 @@ app.get("/contact", async (req: Request, res: Response) => {
       contacts
       );
       console.log("contacts: ", response.body.contacts);
-    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-customers');
+    res.redirect(ironServer + 'find-customers');
   } catch (err) {
     console.log(err.response.body.Elements[0].ValidationErrors[0].Message)
     // store the message in cookie
     res.cookie('xeroError', err.response.body.Elements[0].ValidationErrors[0].Message)
-    res.redirect('https://ironmotorsportsapi-gbuda.ondigitalocean.app/find-customers');
+    res.redirect(ironServer + 'find-customers');
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
