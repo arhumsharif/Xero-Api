@@ -1,4 +1,4 @@
-require("dotenv").config();
+// require("dotenv").config();
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
@@ -41,26 +41,26 @@ const ironServer = "https://ironmotorsportsapi-gbuda.ondigitalocean.app/"
 // const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // arhum id
 // const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3"; // arhum secret
 
-const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
-const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
+// const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
+// const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
 
 
 const redirectUrl: string = xeroApiServer + "callback";
 const scopes: string =
   "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
-const xero = new XeroClient({
-  clientId: client_id,
-  clientSecret: client_secret,
-  redirectUris: [redirectUrl],
-  scopes: scopes.split(" "),
-});
+// const xero = new XeroClient({
+//   clientId: client_id,
+//   clientSecret: client_secret,
+//   redirectUris: [redirectUrl],
+//   scopes: scopes.split(" "),
+// });
 
-if (!client_id || !client_secret || !redirectUrl) {
-  throw Error(
-    "Environment Variables not all set - please check your .env file in the project root or create one!"
-  );
-}
+// if (!client_id || !client_secret || !redirectUrl) {
+//   throw Error(
+//     "Environment Variables not all set - please check your .env file in the project root or create one!"
+//   );
+// }
 
 const app: express.Application = express();
 
@@ -169,7 +169,10 @@ app.get("/connect", async (req: Request, res: Response) => {
   let clientId = req.cookies.clientId
   let clientSecret = req.cookies.clientSecret
   let redirectUrl = req.cookies.redirectUrl
+  console.log({clientId, clientSecret, redirectUrl})
+  // return
   xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
+
 
   try {
     const consentUrl: string = await xeroOne.buildConsentUrl();
@@ -257,7 +260,7 @@ app.get("/create-accounts", async (req: Request, res: Response) => {
         type: AccountType.EXPENSE,
         hasAttachments: true,
       };
-      const contacts = await xero.accountingApi.createAccount(
+      const contacts = await xeroOne.accountingApi.createAccount(
         req.session.activeTenant.tenantId,
         account
       );
@@ -279,7 +282,7 @@ app.get("/create-accounts", async (req: Request, res: Response) => {
   //     type: AccountType.EXPENSE,
   //     hasAttachments: true,
   //   };
-  //   const contacts2 = await xero.accountingApi.createAccount(
+  //   const contacts2 = await xeroOne.accountingApi.createAccount(
   //     req.session.activeTenant.tenantId,
   //     account2
   //   );
@@ -289,7 +292,7 @@ app.get("/create-accounts", async (req: Request, res: Response) => {
   //     type: AccountType.EXPENSE,
   //     hasAttachments: true,
   //   };
-  //   const contacts3 = await xero.accountingApi.createAccount(
+  //   const contacts3 = await xeroOne.accountingApi.createAccount(
   //     req.session.activeTenant.tenantId,
   //     account3
   //   );
@@ -305,7 +308,7 @@ app.get("/accounts", async (req: Request, res: Response) => {
   let where = 'Name=="Cash" OR Name=="Card" OR Name=="Invoice"';
   let ifModifiedSince = null;
   try {
-    const contacts = await xero.accountingApi.getAccounts(
+    const contacts = await xeroOne.accountingApi.getAccounts(
       req.session.activeTenant.tenantId,
       ifModifiedSince,
       where
@@ -320,7 +323,7 @@ app.get("/accounts", async (req: Request, res: Response) => {
 app.get("/invoice-pdf", async (req: Request, res: Response) => {
   let id = 'd8bd3eb4-c662-4913-9f54-b613f8736ff5'
   try {
-    const response = await xero.accountingApi.getInvoiceAsPdf(
+    const response = await xeroOne.accountingApi.getInvoiceAsPdf(
       req.session.activeTenant.tenantId, id
     );
     console.log(response.body || response.response.statusCode)
@@ -430,7 +433,7 @@ app.get("/invoice", async (req: Request, res: Response) => {
   let where = 'type=="ACCPAY"';
   let ifModifiedSince = null;
   try {
-    const contacts = await xero.accountingApi.getContacts(
+    const contacts = await xeroOne.accountingApi.getContacts(
       req.session.activeTenant.tenantId,
       ifModifiedSince,
       where      
@@ -460,7 +463,7 @@ app.get("/invoice", async (req: Request, res: Response) => {
     const invoices: Invoices = {
       invoices: invoice,
     };
-    const response = await xero.accountingApi.createInvoices(
+    const response = await xeroOne.accountingApi.createInvoices(
       req.session.activeTenant.tenantId,
       invoices
     );
