@@ -1,5 +1,6 @@
 // require("dotenv").config();
 var cookieParser = require('cookie-parser');
+var url = require('url')
 var bodyParser = require('body-parser')
 var nodemailer = require('nodemailer');
 import { rejects } from "assert";
@@ -26,6 +27,8 @@ import {
 
 const session = require("express-session");
 
+
+
 // urls
 const xeroApiLocal = "http://localhost:5001/"
 const xeroApiServer = "https://ironmotorsportsxero-hmwty.ondigitalocean.app/"
@@ -41,28 +44,34 @@ const ironServer = "https://ironmotorsportsapi-gbuda.ondigitalocean.app/"
 // const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // arhum id
 // const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3"; // arhum secret
 
-// const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
-// const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
+const client_id: string = "4DDEE1DCDA9D44568B71A5E0515EF606"; // user id
+const client_secret: string = "NZABPl-oAjijrnpXmnvuLDj6ofz5nwFugDtmIagOHsysIbG3";  // user secret
 
 
 const redirectUrl: string = xeroApiServer + "callback";
 const scopes: string =
   "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
 
-// const xero = new XeroClient({
-//   clientId: client_id,
-//   clientSecret: client_secret,
-//   redirectUris: [redirectUrl],
-//   scopes: scopes.split(" "),
-// });
+const xero = new XeroClient({
+  clientId: client_id,
+  clientSecret: client_secret,
+  redirectUris: [redirectUrl],
+  scopes: scopes.split(" "),
+});
 
-// if (!client_id || !client_secret || !redirectUrl) {
-//   throw Error(
-//     "Environment Variables not all set - please check your .env file in the project root or create one!"
-//   );
-// }
+if (!client_id || !client_secret || !redirectUrl) {
+  throw Error(
+    "Environment Variables not all set - please check your .env file in the project root or create one!"
+  );
+}
 
 const app: express.Application = express();
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: true }))
+
+// parse application/json
+app.use(bodyParser.json())
 
 app.use(express.static(__dirname + "/build"));
 
@@ -77,11 +86,7 @@ app.use(
 
 app.use(cookieParser());
 
-// parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: true }))
 
-// parse application/json
-app.use(bodyParser.json())
 
 const authenticationData: any = (req: Request, res: Response) => {
   return {
@@ -123,6 +128,7 @@ const sendEmail = (receiver, subject, text) => {
 const intiateXeroObject = (id, secret, url) => {
   const client_id: string = id; // user id
   const client_secret: string = secret;  // user secret
+  console.log("My credentiasl", {client_id, client_secret})
   const redirectUrl: string = xeroApiServer + "callback";
   const scopes: string =
     "openid profile email accounting.settings accounting.reports.read accounting.journals.read accounting.contacts accounting.attachments accounting.transactions offline_access";
@@ -146,36 +152,69 @@ app.get("/", (req: Request, res: Response) => {
   res.send(`<a href='/connect'>Connect to Xero</a>`);
 });
 
-app.post("/connection", async (req: Request, res: Response) => {
-  // get credentials
-  console.log(req.body)
-  console.log(typeof(req.body))
-  console.log(req.body.Phone)
-  // let clientId = req.body.ClientId
-  // let clientSecret = req.body.ClientSecret
-  // let name = req.body.Name
-  // let email = req.body.Email
-  // let phone =req.body.Phone
-  // console.log({clientId, clientSecret, name, email, phone})
-  // xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
+// app.post("/connection", async (req: Request, res: Response) => {
+//   // get credentials
+//   console.log(req.body)
+//   console.log(typeof(req.body))
+//   let myBody = JSON.parse(Object.keys(req.body)[0])
+//   console.log(myBody)
+//   console.log(myBody.Phone)
+//   // let clientId = req.body.ClientId
+//   // let clientSecret = req.body.ClientSecret
+//   // let name = req.body.Name
+//   // let email = req.body.Email
+//   // let phone =req.body.Phone
+//   // console.log({clientId, clientSecret, name, email, phone})
+//   // xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
 
-  return res.status(200).json({
-    message: "Data Intialized"
-  });
-});
+//   return res.redirect(url.format({
+//     pathname:"/connect",
+//     query: {
+//        "clientId": myBody.ClientId,
+//        "clientSecret": myBody.ClientSecret,
+//        "phone": myBody.Phone
+//      }
+//   }));
+
+// });
 
 app.get("/connect", async (req: Request, res: Response) => {
   // get credentials
-  let clientId = req.cookies.clientId
-  let clientSecret = req.cookies.clientSecret
-  let redirectUrl = req.cookies.redirectUrl
-  console.log({clientId, clientSecret, redirectUrl})
-  // return
-  xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
+  console.log("at connect")
+  
+  let clientId = req.query.clientId
+  let clientSecret = req.query.clientSecret
+  let redirectUrl = req.query.redirectUrl
+  let xeroStatus = req.query.xeroStatus
+  // set this site cookies in req
+  if (parseInt(xeroStatus.toString()) == 1)
+  {
+    let phone = req.query.customerPhone
+    let email = req.query.customerEmail
+    let name = req.query.customerName
+    res.cookie('xeroStatus', xeroStatus)
+    res.cookie('customerName', name)
+    res.cookie('customerEmail', email)
+    res.cookie('customerPhone', phone)
+  }
+  else
+  {
+    let email = req.query.customerEmail
+    let price = req.query.customerPrice
+    let payType = req.query.customerPayType
+    let date = req.query.customerDate
+    res.cookie('xeroStatus', xeroStatus)
+    res.cookie('customerEmail', email)
+    res.cookie('customerPrice', price)
+    res.cookie('customerPayType', payType)
+    res.cookie('customerDate', date)
+  }
 
+  xeroOne = intiateXeroObject(clientId, clientSecret, redirectUrl);
 
   try {
     const consentUrl: string = await xeroOne.buildConsentUrl();
+    console.log(consentUrl)
     res.redirect(consentUrl);
   } catch (err) {
     res.send("Sorry, something went wrong");
@@ -183,6 +222,12 @@ app.get("/connect", async (req: Request, res: Response) => {
 });
 
 app.get("/callback", async (req: Request, res: Response) => {
+  
+    console.log("Cookies::::")
+    console.log(req.cookies)
+    let status = req.cookies.xeroStatus
+    console.log(status)
+
   try {
     const tokenSet: TokenSet = await xeroOne.apiCallback(req.url);
     await xeroOne.updateTenants();
@@ -191,11 +236,6 @@ app.get("/callback", async (req: Request, res: Response) => {
     const decodedAccessToken: XeroAccessToken = jwtDecode(
       tokenSet.access_token
     );
-
-    console.log("Cookies::::")
-    console.log(req.cookies)
-    
-    let status = req.cookies.xeroStatus
 
     req.session.decodedIdToken = decodedIdToken;
     req.session.decodedAccessToken = decodedAccessToken;
@@ -208,11 +248,11 @@ app.get("/callback", async (req: Request, res: Response) => {
 
     console.log(authData);
 
-    if (status == 1)
+    if (parseInt(status) == 1)
     {
       res.redirect("/contact");
     }
-    else if (status == 2)
+    else if (parseInt(status) == 2)
     {
       res.redirect("/save-invoice")
     }
